@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="下单确认">
+<meta name="theme-color" content="#0f172a">
+<meta name="description" content="交易下单前 Checklist 确认助手">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>下单前确认</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent: #3b82f6;
+  --success: #22c55e;
+  --success-glow: rgba(34,197,94,0.3);
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100dvh;
+  padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom)+110px) 16px;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+.header{
+  text-align:center;padding:24px 0 8px;position:sticky;top:0;z-index:10;
+  background:linear-gradient(to bottom,var(--bg) 70%,transparent);padding-bottom:20px;
+}
+.header h1{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.header p{font-size:14px;color:var(--text-secondary);margin-top:4px}
+.header-actions{
+  position:absolute;right:4px;top:26px;display:flex;gap:6px;
+}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;border:none;
+  background:transparent;color:var(--text-secondary);font-size:18px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.icon-btn:active{background:var(--surface)}
+
+.progress-bar{width:100%;height:4px;background:var(--surface);border-radius:2px;margin:16px 0 8px;overflow:hidden}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s cubic-bezier(.4,0,.2,1);width:0%}
+.progress-bar-fill.complete{background:var(--success)}
+.progress-text{font-size:13px;color:var(--text-secondary);text-align:center;margin-bottom:20px;transition:color .3s}
+.progress-text.complete{color:var(--success)}
+
+.category{margin-bottom:20px}
+.category-header{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-left:4px}
+.category-icon{font-size:18px}
+
+.checklist-item{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;
+  cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.checklist-item:active{transform:scale(.98);background:var(--surface-hover)}
+.checklist-item.checked{border-color:var(--success);background:rgba(34,197,94,.06)}
+
+.checkbox{
+  width:26px;height:26px;min-width:26px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s cubic-bezier(.4,0,.2,1);margin-top:1px;
+}
+.checklist-item.checked .checkbox{background:var(--success);border-color:var(--success);box-shadow:0 0 12px var(--success-glow)}
+.checkbox svg{width:14px;height:14px;opacity:0;transform:scale(.5);transition:all .25s cubic-bezier(.4,0,.2,1)}
+.checklist-item.checked .checkbox svg{opacity:1;transform:scale(1)}
+
+.item-content{flex:1}
+.item-text{font-size:15px;font-weight:500;line-height:1.5;transition:color .2s}
+.checklist-item.checked .item-text{color:var(--text-secondary)}
+.item-hint{font-size:13px;color:var(--text-secondary);margin-top:4px;line-height:1.4;opacity:.8}
+.required-badge{
+  display:inline-block;font-size:11px;background:rgba(239,68,68,.15);
+  color:var(--danger);padding:2px 7px;border-radius:6px;margin-left:6px;font-weight:600;vertical-align:middle;
+}
+
+.bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:12px 16px calc(env(safe-area-inset-bottom)+12px);
+  background:linear-gradient(to top,var(--bg) 60%,transparent);z-index:20;display:flex;gap:10px;
+}
+.btn{
+  flex:1;padding:16px;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:600;
+  cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);-webkit-tap-highlight-color:transparent;
+}
+.btn:active{transform:scale(.97)}
+.btn-confirm{background:var(--surface);color:var(--text-secondary);border:1.5px solid var(--border);flex:3}
+.btn-confirm.ready{background:var(--success);color:#fff;border-color:var(--success);box-shadow:0 4px 20px var(--success-glow)}
+.btn-confirm.ready:active{background:#16a34a}
+.btn-confirm.cooldown{background:var(--warning);color:#0f172a;border-color:var(--warning)}
+.btn-reset{background:var(--surface);color:var(--text-secondary);border:1.5px solid var(--border);flex:1;font-size:14px}
+.btn-reset:active{background:var(--surface-hover)}
+
+.result-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.95);
+  z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .4s;
+}
+.result-overlay.visible{opacity:1;pointer-events:auto}
+.result-icon{font-size:72px;margin-bottom:16px;animation:pop .5s cubic-bezier(.4,0,.2,1)}
+.result-text{font-size:22px;font-weight:700;margin-bottom:8px}
+.result-sub{font-size:15px;color:var(--text-secondary);margin-bottom:32px;text-align:center;padding:0 20px}
+.result-close{
+  background:var(--surface);border:1.5px solid var(--border);color:var(--text);
+  padding:14px 48px;border-radius:var(--radius-sm);font-size:16px;font-weight:600;cursor:pointer;
+}
+@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+
+.timestamp{text-align:center;font-size:12px;color:var(--text-secondary);opacity:.5;margin-bottom:12px}
+
+/* --- History panel --- */
+.panel-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.85);
+  z-index:90;opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.panel-overlay.visible{opacity:1;pointer-events:auto}
+.panel{
+  position:fixed;bottom:0;left:0;right:0;max-height:70vh;
+  background:var(--bg);border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;z-index:91;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;padding:20px 16px calc(env(safe-area-inset-bottom)+16px);
+  -webkit-overflow-scrolling:touch;
+}
+.panel-overlay.visible .panel{transform:translateY(0)}
+.panel-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.panel-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.history-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;
+}
+.history-item:last-child{border-bottom:none}
+.history-time{color:var(--text)}
+.history-count{color:var(--text-secondary);font-size:13px}
+.history-empty{color:var(--text-secondary);font-size:14px;text-align:center;padding:24px 0}
+.clear-history{
+  margin-top:16px;width:100%;padding:12px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);
+  font-size:14px;cursor:pointer;
+}
+.clear-history:active{background:var(--surface)}
+
+/* --- Edit panel --- */
+.edit-category{margin-bottom:16px}
+.edit-category-title{font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px}
+.edit-item{
+  display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);
+}
+.edit-item-text{flex:1;font-size:14px;line-height:1.4}
+.edit-item-delete{
+  width:28px;height:28px;border-radius:50%;border:none;
+  background:rgba(239,68,68,.1);color:var(--danger);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.add-item-row{display:flex;gap:8px;margin-top:8px}
+.add-item-input{
+  flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text);font-size:14px;outline:none;
+}
+.add-item-input:focus{border-color:var(--accent)}
+.add-item-input::placeholder{color:var(--text-secondary);opacity:.6}
+.add-item-btn{
+  padding:10px 16px;border:none;border-radius:var(--radius-sm);
+  background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;
+}
+.panel-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.panel-tab{
+  flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;
+  color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;
+}
+.panel-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="appTitle">下单前确认</h1>
+  <p id="appSubtitle">每一笔交易都值得认真对待</p>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="openPanel()" title="历史/设置">⚙️</button>
+  </div>
+</div>
+
+<div class="progress-bar"><div class="progress-bar-fill" id="progressFill"></div></div>
+<div class="progress-text" id="progressText">0 / 0</div>
+<div class="timestamp" id="timestamp"></div>
+
+<div id="checklistContainer"></div>
+
+<div class="bottom-bar">
+  <button class="btn btn-reset" onclick="resetAll()">🔄 重置</button>
+  <button class="btn btn-confirm" id="confirmBtn" onclick="handleConfirm()">✅ 全部确认，可以下单</button>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-icon">🎯</div>
+  <div class="result-text">确认完成</div>
+  <div class="result-sub" id="resultSub">所有检查项已通过，祝你交易顺利</div>
+  <button class="result-close" onclick="closeResult()">关闭</button>
+</div>
+
+<!-- Settings / History panel -->
+<div class="panel-overlay" id="panelOverlay" onclick="closePanel()">
+  <div class="panel" onclick="event.stopPropagation()">
+    <div class="panel-handle"></div>
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="history" onclick="switchTab('history',this)">确认记录</button>
+      <button class="panel-tab" data-tab="edit" onclick="switchTab('edit',this)">编辑规则</button>
+    </div>
+    <div class="tab-content active" id="tab-history">
+      <div id="historyList"></div>
+      <button class="clear-history" id="clearHistoryBtn" onclick="clearHistory()">清空记录</button>
+    </div>
+    <div class="tab-content" id="tab-edit">
+      <div id="editContainer"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COOLDOWN = 5;
+const CONFIRM_TEXT = '✅ 全部确认，可以下单';
+const STORAGE_KEY = 'trade_checklist_data';
+const HISTORY_KEY = 'trade_checklist_history';
+
+const DEFAULT_DATA = {
+  categories: [
+    {
+      name: '趋势与方向', icon: '📈',
+      items: [
+        { text: '确认了大周期趋势方向（日线/周线）', required: true, hint: '不要逆势交易' },
+        { text: '入场时机符合交易计划，不是临时起意', required: true, hint: '只做计划内的交易' },
+        { text: '当前不处于震荡/无趋势状态', required: false, hint: '震荡行情减少交易频率' }
+      ]
+    },
+    {
+      name: '风控与仓位', icon: '🛡️',
+      items: [
+        { text: '已设定明确的止损位', required: true, hint: '没有止损 = 不允许开仓' },
+        { text: '单笔风险不超过总资金的 2%', required: true, hint: '严格执行仓位管理' },
+        { text: '盈亏比 >= 2:1', required: true, hint: '不做盈亏比不划算的交易' },
+        { text: '当前总持仓风险在可控范围内', required: true, hint: '注意多笔持仓的叠加风险' }
+      ]
+    },
+    {
+      name: '消息与环境', icon: '📰',
+      items: [
+        { text: '已检查近期是否有重大数据/事件公布', required: true, hint: '财报、CPI、FOMC 等重要事件前谨慎开仓' },
+        { text: '当前市场流动性正常（非节假日/非深夜）', required: false, hint: '低流动性时段容易滑点' }
+      ]
+    },
+    {
+      name: '心态检查', icon: '🧘',
+      items: [
+        { text: '当前没有在报复性交易（上一笔亏损后急于翻本）', required: true, hint: '亏损后至少冷静 30 分钟再考虑下一笔' },
+        { text: '没有 FOMO（害怕错过）心态', required: true, hint: '错过就错过，机会永远有' },
+        { text: '身体状态良好，头脑清醒', required: false, hint: '疲劳/情绪波动时不交易' }
+      ]
+    }
+  ]
+};
+
+let cooldownTimer = null;
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadHistory() {
+  try {
+    const h = localStorage.getItem(HISTORY_KEY);
+    if (h) return JSON.parse(h);
+  } catch(e) {}
+  return [];
+}
+
+function saveHistory(history) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderChecklist() {
+  const data = loadData();
+  const container = document.getElementById('checklistContainer');
+  let html = '';
+  data.categories.forEach(cat => {
+    html += '<div class="category"><div class="category-header">' +
+      '<span class="category-icon">' + cat.icon + '</span>' +
+      '<span>' + esc(cat.name) + '</span></div>';
+    cat.items.forEach(item => {
+      const req = item.required ? 'true' : 'false';
+      const badge = item.required ? '<span class="required-badge">必选</span>' : '';
+      const hint = item.hint ? '<div class="item-hint">💡 ' + esc(item.hint) + '</div>' : '';
+      html += '<div class="checklist-item" data-required="' + req + '" onclick="toggleItem(this)">' +
+        '<div class="checkbox"><svg viewBox="0 0 14 14" fill="none">' +
+        '<path d="M2 7.5L5.5 11L12 3" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg></div><div class="item-content"><span class="item-text">' +
+        esc(item.text) + badge + '</span>' + hint + '</div></div>';
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+  updateProgress();
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('timestamp').textContent =
+    now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+
+    ' '+pad(now.getHours())+':'+pad(now.getMinutes());
+}
+
+function toggleItem(el) {
+  if (cooldownTimer) return;
+  el.classList.toggle('checked');
+  if (el.classList.contains('checked') && navigator.vibrate) navigator.vibrate(10);
+  updateProgress();
+}
+
+function updateProgress() {
+  const all = document.querySelectorAll('.checklist-item');
+  const checked = document.querySelectorAll('.checklist-item.checked');
+  const total = all.length;
+  const done = checked.length;
+  const pct = total > 0 ? (done/total)*100 : 0;
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  const btn = document.getElementById('confirmBtn');
+  fill.style.width = pct+'%';
+  text.textContent = done+' / '+total;
+  const allComplete = pct === 100;
+  fill.classList.toggle('complete', allComplete);
+  text.classList.toggle('complete', allComplete);
+  const requiredItems = document.querySelectorAll('.checklist-item[data-required="true"]');
+  const allReqOk = Array.from(requiredItems).every(i => i.classList.contains('checked'));
+  btn.classList.toggle('ready', allReqOk && done > 0);
+}
+
+function handleConfirm() {
+  const btn = document.getElementById('confirmBtn');
+  if (!btn.classList.contains('ready') || cooldownTimer) return;
+  let remaining = COOLDOWN;
+  btn.classList.remove('ready');
+  btn.classList.add('cooldown');
+  btn.textContent = '冷静期 '+remaining+'s ...';
+  cooldownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      btn.classList.remove('cooldown');
+      btn.textContent = CONFIRM_TEXT;
+      recordConfirmation();
+      showResult();
+    } else {
+      btn.textContent = '冷静期 '+remaining+'s ...';
+    }
+  }, 1000);
+}
+
+function recordConfirmation() {
+  const all = document.querySelectorAll('.checklist-item');
+  const checked = document.querySelectorAll('.checklist-item.checked');
+  const history = loadHistory();
+  history.unshift({
+    time: new Date().toISOString(),
+    total: all.length,
+    checked: checked.length
+  });
+  if (history.length > 50) history.length = 50;
+  saveHistory(history);
+}
+
+function showResult() {
+  const history = loadHistory();
+  const sub = document.getElementById('resultSub');
+  sub.textContent = '所有检查项已通过，祝你交易顺利\n这是你第 ' + history.length + ' 次完成确认';
+  document.getElementById('resultOverlay').classList.add('visible');
+  if (navigator.vibrate) navigator.vibrate([50,50,50]);
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('visible');
+}
+
+function resetAll() {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer);
+    cooldownTimer = null;
+    document.getElementById('confirmBtn').classList.remove('cooldown');
+    document.getElementById('confirmBtn').textContent = CONFIRM_TEXT;
+  }
+  document.querySelectorAll('.checklist-item.checked').forEach(el => el.classList.remove('checked'));
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// --- Panel (History + Edit) ---
+function openPanel() {
+  renderHistory();
+  renderEditPanel();
+  document.getElementById('panelOverlay').classList.add('visible');
+}
+
+function closePanel() {
+  document.getElementById('panelOverlay').classList.remove('visible');
+}
+
+function switchTab(tabId, el) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+tabId).classList.add('active');
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const container = document.getElementById('historyList');
+  const clearBtn = document.getElementById('clearHistoryBtn');
+  if (history.length === 0) {
+    container.innerHTML = '<div class="history-empty">暂无确认记录</div>';
+    clearBtn.style.display = 'none';
+    return;
+  }
+  clearBtn.style.display = 'block';
+  container.innerHTML = history.map(h => {
+    const d = new Date(h.time);
+    const pad = n => String(n).padStart(2,'0');
+    const ts = pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    return '<div class="history-item"><span class="history-time">'+ts+'</span>' +
+      '<span class="history-count">'+h.checked+'/'+h.total+' 项</span></div>';
+  }).join('');
+}
+
+function clearHistory() {
+  if (confirm('确定清空所有确认记录？')) {
+    saveHistory([]);
+    renderHistory();
+  }
+}
+
+function renderEditPanel() {
+  const data = loadData();
+  const container = document.getElementById('editContainer');
+  let html = '';
+  data.categories.forEach((cat, ci) => {
+    html += '<div class="edit-category"><div class="edit-category-title">' +
+      cat.icon+' '+esc(cat.name)+'</div>';
+    cat.items.forEach((item, ii) => {
+      const reqLabel = item.required ? ' <span class="required-badge">必选</span>' : '';
+      html += '<div class="edit-item"><span class="edit-item-text">'+esc(item.text)+reqLabel+'</span>' +
+        '<button class="edit-item-delete" onclick="deleteItem('+ci+','+ii+')" title="删除">✕</button></div>';
+    });
+    html += '<div class="add-item-row">' +
+      '<input class="add-item-input" id="addInput_'+ci+'" placeholder="添加新规则...">' +
+      '<button class="add-item-btn" onclick="addItem('+ci+')">添加</button></div></div>';
+  });
+  html += '<div style="margin-top:16px">' +
+    '<button class="clear-history" onclick="resetToDefault()">恢复默认规则</button></div>';
+  container.innerHTML = html;
+}
+
+function deleteItem(catIdx, itemIdx) {
+  const data = loadData();
+  data.categories[catIdx].items.splice(itemIdx, 1);
+  saveData(data);
+  renderEditPanel();
+  renderChecklist();
+}
+
+function addItem(catIdx) {
+  const input = document.getElementById('addInput_'+catIdx);
+  const text = input.value.trim();
+  if (!text) return;
+  const data = loadData();
+  data.categories[catIdx].items.push({ text: text, required: false, hint: '' });
+  saveData(data);
+  input.value = '';
+  renderEditPanel();
+  renderChecklist();
+}
+
+function resetToDefault() {
+  if (confirm('确定恢复为默认规则？你自定义的修改会丢失。')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderEditPanel();
+    renderChecklist();
+  }
+}
+
+// --- Init ---
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+updateTimestamp();
+setInterval(updateTimestamp, 60000);
+renderChecklist();
+</script>
+</body>
+</html>

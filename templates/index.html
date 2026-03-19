@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<title>{{ settings.title }}</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #334155;
+    --border: #334155;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent: #3b82f6;
+    --success: #22c55e;
+    --success-glow: rgba(34, 197, 94, 0.3);
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 100px) 16px;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 24px 0 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+    padding-bottom: 20px;
+  }
+  .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .header p { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--surface);
+    border-radius: 2px;
+    margin: 16px 0 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+  .progress-bar-fill.complete { background: var(--success); }
+  .progress-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 20px;
+    transition: color 0.3s;
+  }
+  .progress-text.complete { color: var(--success); }
+
+  .category { margin-bottom: 20px; }
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
+  .category-icon { font-size: 18px; }
+
+  .checklist-item {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .checklist-item:active {
+    transform: scale(0.98);
+    background: var(--surface-hover);
+  }
+  .checklist-item.checked {
+    border-color: var(--success);
+    background: rgba(34, 197, 94, 0.06);
+  }
+
+  .checkbox {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 1px;
+  }
+  .checklist-item.checked .checkbox {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 12px var(--success-glow);
+  }
+  .checkbox svg {
+    width: 14px; height: 14px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .checklist-item.checked .checkbox svg {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .item-content { flex: 1; }
+  .item-text { font-size: 15px; font-weight: 500; line-height: 1.5; transition: color 0.2s; }
+  .checklist-item.checked .item-text { color: var(--text-secondary); }
+  .item-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+  .required-badge {
+    display: inline-block;
+    font-size: 11px;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-left: 6px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 12px 16px calc(env(safe-area-inset-bottom) + 12px);
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    z-index: 20;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-confirm {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+    flex: 3;
+  }
+  .btn-confirm.ready {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+    box-shadow: 0 4px 20px var(--success-glow);
+  }
+  .btn-confirm.ready:active { background: #16a34a; }
+  .btn-confirm.cooldown {
+    background: var(--warning);
+    color: #0f172a;
+    border-color: var(--warning);
+  }
+
+  .btn-reset {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+    flex: 1;
+    font-size: 14px;
+  }
+  .btn-reset:active { background: var(--surface-hover); }
+
+  .result-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.95);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s;
+  }
+  .result-overlay.visible { opacity: 1; pointer-events: auto; }
+  .result-icon {
+    font-size: 72px;
+    margin-bottom: 16px;
+    animation: pop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .result-text { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .result-sub { font-size: 15px; color: var(--text-secondary); margin-bottom: 32px; }
+  .result-close {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 14px 48px;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  .timestamp {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ settings.title }}</h1>
+  <p>{{ settings.subtitle }}</p>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-bar-fill" id="progressFill"></div>
+</div>
+<div class="progress-text" id="progressText">0 / 0</div>
+
+<div class="timestamp" id="timestamp"></div>
+
+<!-- CATEGORIES_PLACEHOLDER -->
+
+<div class="bottom-bar">
+  <button class="btn btn-reset" onclick="resetAll()">{{ settings.reset_button_text }}</button>
+  <button class="btn btn-confirm" id="confirmBtn" onclick="handleConfirm()">{{ settings.confirm_button_text }}</button>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-icon">🎯</div>
+  <div class="result-text">确认完成</div>
+  <div class="result-sub">所有检查项已通过，祝你交易顺利</div>
+  <button class="result-close" onclick="closeResult()">关闭</button>
+</div>
+
+<script>
+const COOLDOWN = {{ settings.cooldown_seconds }};
+const CONFIRM_TEXT = '{{ settings.confirm_button_text }}';
+let cooldownTimer = null;
+
+function updateTimestamp() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('timestamp').textContent =
+    now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+    ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+}
+
+function toggleItem(el) {
+  if (cooldownTimer) return;
+  el.classList.toggle('checked');
+  if (el.classList.contains('checked') && navigator.vibrate) navigator.vibrate(10);
+  updateProgress();
+}
+
+function updateProgress() {
+  const all = document.querySelectorAll('.checklist-item');
+  const checked = document.querySelectorAll('.checklist-item.checked');
+  const total = all.length;
+  const done = checked.length;
+  const pct = total > 0 ? (done / total) * 100 : 0;
+
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  const btn = document.getElementById('confirmBtn');
+
+  fill.style.width = pct + '%';
+  text.textContent = done + ' / ' + total;
+
+  const allComplete = pct === 100;
+  fill.classList.toggle('complete', allComplete);
+  text.classList.toggle('complete', allComplete);
+
+  const requiredItems = document.querySelectorAll('.checklist-item[data-required="true"]');
+  const allRequiredChecked = Array.from(requiredItems).every(i => i.classList.contains('checked'));
+
+  if (allRequiredChecked && done > 0) {
+    btn.classList.add('ready');
+  } else {
+    btn.classList.remove('ready');
+  }
+}
+
+function handleConfirm() {
+  const btn = document.getElementById('confirmBtn');
+  if (!btn.classList.contains('ready') || cooldownTimer) return;
+
+  let remaining = COOLDOWN;
+  btn.classList.remove('ready');
+  btn.classList.add('cooldown');
+  btn.textContent = '冷静期 ' + remaining + 's ...';
+
+  cooldownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      btn.classList.remove('cooldown');
+      btn.textContent = CONFIRM_TEXT;
+      showResult();
+    } else {
+      btn.textContent = '冷静期 ' + remaining + 's ...';
+    }
+  }, 1000);
+}
+
+function showResult() {
+  document.getElementById('resultOverlay').classList.add('visible');
+  if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('visible');
+}
+
+function resetAll() {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer);
+    cooldownTimer = null;
+    document.getElementById('confirmBtn').classList.remove('cooldown');
+    document.getElementById('confirmBtn').textContent = CONFIRM_TEXT;
+  }
+  document.querySelectorAll('.checklist-item.checked').forEach(el => el.classList.remove('checked'));
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateTimestamp();
+setInterval(updateTimestamp, 60000);
+updateProgress();
+</script>
+</body>
+</html>
