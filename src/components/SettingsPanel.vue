@@ -22,6 +22,7 @@ const emit = defineEmits<{
   deleteItem: [catIdx: number, itemIdx: number]
   addItem: [catIdx: number, text: string]
   renameCategory: [catIdx: number, name: string]
+  switchStyle: []
   resetToDefault: []
   clearHistory: []
 }>()
@@ -50,6 +51,13 @@ function handleDelete(catIdx: number, itemIdx: number) {
 function handleRenameCategory(catIdx: number) {
   const name = (catNameInputs.value[catIdx] || '').trim()
   if (name) emit('renameCategory', catIdx, name)
+}
+
+function handleSwitchStyle() {
+  if (confirm('切换派别将重置所有规则，确定继续？')) {
+    emit('switchStyle')
+    emit('close')
+  }
 }
 
 function handleResetToDefault() {
@@ -128,7 +136,8 @@ function handleClearHistory() {
             <button class="add-item-btn" @click="handleAdd(ci)">添加</button>
           </div>
         </div>
-        <div style="margin-top: 16px">
+        <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px">
+          <button class="switch-style-btn" @click="handleSwitchStyle">切换交易派别</button>
           <button class="clear-history" @click="handleResetToDefault">恢复默认规则</button>
         </div>
       </div>
@@ -242,6 +251,20 @@ function handleClearHistory() {
 }
 .clear-history:active {
   background: var(--surface);
+}
+.switch-style-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.switch-style-btn:active {
+  background: rgba(59, 130, 246, 0.2);
 }
 
 .edit-category {

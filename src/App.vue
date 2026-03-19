@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import type { TradingStyle } from './data/defaultChecklist'
+import StylePicker from './components/StylePicker.vue'
 import CategoryGroup from './components/CategoryGroup.vue'
 import ProgressBar from './components/ProgressBar.vue'
 import BottomBar from './components/BottomBar.vue'
@@ -9,6 +11,7 @@ import { useChecklist } from './composables/useChecklist'
 import { useHistory } from './composables/useHistory'
 
 const {
+  hasChosenStyle,
   data,
   totalItems,
   checkedCount,
@@ -20,6 +23,8 @@ const {
   deleteItem,
   addItem,
   renameCategory,
+  chooseStyle,
+  switchStyle,
   resetToDefault,
 } = useChecklist()
 
@@ -50,6 +55,10 @@ onUnmounted(() => {
   clearInterval(tsInterval)
 })
 
+function handleChooseStyle(s: TradingStyle) {
+  chooseStyle(s)
+}
+
 function handleToggle(catName: string, itemText: string) {
   toggle(catName, itemText)
   if (isChecked(catName, itemText) && navigator.vibrate) {
@@ -70,57 +79,62 @@ function handleReset() {
 </script>
 
 <template>
-  <div class="header">
-    <h1>下单前确认</h1>
-    <p>每一笔交易都值得认真对待</p>
-    <div class="header-actions">
-      <button class="settings-btn" @click="showPanel = true">
-        <span class="settings-btn-icon">⚙️</span>
-        <span class="settings-btn-text">自定义规则</span>
-      </button>
+  <StylePicker v-if="!hasChosenStyle" @choose="handleChooseStyle" />
+
+  <template v-else>
+    <div class="header">
+      <h1>下单前确认</h1>
+      <p>每一笔交易都值得认真对待</p>
+      <div class="header-actions">
+        <button class="settings-btn" @click="showPanel = true">
+          <span class="settings-btn-icon">⚙️</span>
+          <span class="settings-btn-text">自定义规则</span>
+        </button>
+      </div>
     </div>
-  </div>
 
-  <ProgressBar :progress="progress" :checked="checkedCount" :total="totalItems" />
+    <ProgressBar :progress="progress" :checked="checkedCount" :total="totalItems" />
 
-  <div class="timestamp">{{ timestamp }}</div>
+    <div class="timestamp">{{ timestamp }}</div>
 
-  <CategoryGroup
-    v-for="cat in data.categories"
-    :key="cat.name"
-    :name="cat.name"
-    :icon="cat.icon"
-    :items="cat.items"
-    :is-checked="isChecked"
-    @toggle="handleToggle"
-  />
+    <CategoryGroup
+      v-for="cat in data.categories"
+      :key="cat.name"
+      :name="cat.name"
+      :icon="cat.icon"
+      :items="cat.items"
+      :is-checked="isChecked"
+      @toggle="handleToggle"
+    />
 
-  <BottomBar
-    :ready="allRequiredChecked"
-    :cooldown-seconds="COOLDOWN"
-    :confirm-text="CONFIRM_TEXT"
-    :reset-text="RESET_TEXT"
-    @confirm="handleConfirm"
-    @reset="handleReset"
-  />
+    <BottomBar
+      :ready="allRequiredChecked"
+      :cooldown-seconds="COOLDOWN"
+      :confirm-text="CONFIRM_TEXT"
+      :reset-text="RESET_TEXT"
+      @confirm="handleConfirm"
+      @reset="handleReset"
+    />
 
-  <ResultOverlay
-    :visible="showResult"
-    :confirm-count="history.length"
-    @close="showResult = false"
-  />
+    <ResultOverlay
+      :visible="showResult"
+      :confirm-count="history.length"
+      @close="showResult = false"
+    />
 
-  <SettingsPanel
-    :visible="showPanel"
-    :data="data"
-    :history="history"
-    @close="showPanel = false"
-    @delete-item="deleteItem"
-    @add-item="addItem"
-    @rename-category="renameCategory"
-    @reset-to-default="resetToDefault"
-    @clear-history="clearHistory"
-  />
+    <SettingsPanel
+      :visible="showPanel"
+      :data="data"
+      :history="history"
+      @close="showPanel = false"
+      @delete-item="deleteItem"
+      @add-item="addItem"
+      @rename-category="renameCategory"
+      @switch-style="switchStyle"
+      @reset-to-default="resetToDefault"
+      @clear-history="clearHistory"
+    />
+  </template>
 </template>
 
 <style>
