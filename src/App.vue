@@ -74,7 +74,10 @@ function handleReset() {
     <h1>下单前确认</h1>
     <p>每一笔交易都值得认真对待</p>
     <div class="header-actions">
-      <button class="icon-btn" title="历史/设置" @click="showPanel = true">⚙️</button>
+      <button class="settings-btn" @click="showPanel = true">
+        <span class="settings-btn-icon">⚙️</span>
+        <span class="settings-btn-text">自定义规则</span>
+      </button>
     </div>
   </div>
 
@@ -178,26 +181,30 @@ body {
 .header-actions {
   position: absolute;
   right: 4px;
-  top: 26px;
-  display: flex;
-  gap: 6px;
+  top: 28px;
 }
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 18px;
-  cursor: pointer;
+.settings-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.icon-btn:active {
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
   background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+}
+.settings-btn:active {
+  background: var(--surface-hover);
+}
+.settings-btn-icon {
+  font-size: 14px;
+}
+.settings-btn-text {
+  white-space: nowrap;
 }
 
 .timestamp {
